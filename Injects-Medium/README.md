@@ -425,5 +425,5 @@ A exploração de vulnerabilidades em sistemas sem autorização expressa é **i
 
 ## 👤 Autor
 
-**[iceShaher]**
+**iceShaher**
 - TryHackMe: [@iceShaher](https://tryhackme.com/p/iceShaher)
