@@ -29,7 +29,7 @@ xfreerdp /v:MACHINE_IP /u:Administrator /p:letmein123! /dynamic-resolution
 
 **Comando utilizado:**
 ```powershell
-systeminfo | findstr /B /C:"OS Name" /B /C:"OS Version"
+systeminfo
 ```
 
 **Resultado:**
