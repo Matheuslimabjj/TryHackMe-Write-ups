@@ -40,20 +40,20 @@ Room prática da plataforma **TryHackMe** focada em investigação de incidentes
 │  │  (Host infectado)│      │    (Host comprometido)    │  │
 │  │                  │      │                           │  │
 │  │  PowerShell ──►  │      │  lsass.exe ──►            │  │
-│  │  WMIC.exe     │  │      │  Registry Key criada      │  │
-│  └───────┬────────  │      └──────────────┬────────────┘  │
-│          │          │                     │               │
-│          ▼          │                     ▼               │
-│   net user /add  ───┘──► Usuário A1berto criado          │
-│   Alberto pawOrd1         (impersonando Alberto)          │
-│                                                           │
-│          │                                                │
-│          ▼                                                │
-│   PowerShell ofuscado                                     │
-│   (Base64 encoded)                                        │
-│          │                                                │
-│          ▼                                                │
-│   C2 Callback: http://10.10.10.5/news.php                │
+│  │  WMIC.exe        │      │  Registry Key criada      │  │
+│  └───────┬──────────┘      └──────────────┬────────────┘  │
+│          │                                │               │
+│          ▼                                ▼               │
+│   net user /add ──────► Usuário A1berto criado           │
+│   Alberto pawOrd1        (impersonando Alberto)           │
+│                                                          │
+│          │                                               │
+│          ▼                                               │
+│   PowerShell ofuscado                                    │
+│   (Base64 encoded)                                       │
+│          │                                               │
+│          ▼                                               │
+│   C2 Callback: http://10.10.10.5/news.php               │
 └──────────────────────────────────────────────────────────┘
                           │
                           ▼
@@ -116,7 +116,7 @@ index="main"
 
 **Resultado:** `12.256 eventos`
 
-📸 `01-index-main-total-events.png`
+![01-index-main-total-events](screenshots/01-index-main-total-events.png)
 
 ---
 
@@ -131,7 +131,7 @@ index="main" EventID=4720
 
 **Resultado:** Conta `A1berto` criada no host `Micheal.Beaven`, pelo usuário `James` no domínio `Cybertees`. A conta foi criada com **Account Disabled** e sem senha definida — comportamento típico de persistência via backdoor.
 
-📸 `02-eventid-4720-backdoor-user-created.png`
+![02-eventid-4720-backdoor-user-created](screenshots/02-eventid-4720-backdoor-user-created.png)
 
 ---
 
@@ -150,7 +150,7 @@ HKLM\SAM\SAM\Domains\Account\Users\Names\A1berto
 ```
 Processo responsável: `lsass.exe` — indicando manipulação direta do banco SAM.
 
-📸 `03-registry-key-alberto-path.png`
+![03-registry-key-alberto-path](screenshots/03-registry-key-alberto-path.png)
 
 ---
 
@@ -175,7 +175,7 @@ index=main
 
 O usuário legítimo era **Alberto**. O atacante criou **A1berto** (com número "1" no lugar do "l") — técnica clássica de *typosquatting* para dificultar a detecção visual.
 
-📸 `04-stats-count-by-user.png`
+![04-stats-count-by-user](screenshots/04-stats-count-by-user.png)
 
 ---
 
@@ -196,7 +196,7 @@ index=main Channel="Security" "A1berto"
 
 O comando foi executado remotamente no host `WORKSTATION6` a partir da máquina de `James.browne`, usando WMIC como vetor de execução lateral.
 
-📸 `05-security-channel-wmic-command.png`
+![05-security-channel-wmic-command](screenshots/05-security-channel-wmic-command.png)
 
 ---
 
@@ -206,7 +206,7 @@ O EventID **4624** representa logon bem-sucedido no Windows. Verifiquei no campo
 
 **Resultado:** Nenhum evento 4624 encontrado para `A1berto`. O campo EventID apresentou apenas os valores `4688`, `4720` e `4726` — confirmando que **nenhuma tentativa de login foi realizada** com o usuário backdoor durante o período investigado.
 
-📸 `06-eventid-field-no-4624-login.png`
+![06-eventid-field-no-4624-login](screenshots/06-eventid-field-no-4624-login.png)
 
 ---
 
@@ -216,7 +216,7 @@ A análise dos eventos anteriores já indicava o host responsável. O evento de 
 
 **Resultado:** Host infectado com PowerShell malicioso: **`James.browne`**
 
-📸 `07-infected-host-james-browne.png`
+![07-infected-host-james-browne](screenshots/07-infected-host-james-browne.png)
 
 ---
 
@@ -242,7 +242,7 @@ index=main
 
 **Eventos de PowerShell malicioso:** `79`
 
-📸 `08-stats-count-by-channel.png`
+![08-stats-count-by-channel](screenshots/08-stats-count-by-channel.png)
 
 ---
 
@@ -264,6 +264,8 @@ O payload principal estava codificado em Base64 com null bytes intercalados (pad
 
 O resultado revelou um script PowerShell completo com uma segunda camada de encoding.
 
+![09-powershell-operational-obfuscated-payload](screenshots/09-powershell-operational-obfuscated-payload.png)
+
 **Etapa 2 — Segunda decodificação Base64:**
 Dentro do script decodificado, havia uma string adicional em Base64:
 ```
@@ -271,11 +273,15 @@ aAB0AHQAcAA6AC8ALwAxADAALgAxADAALgAxADAALgA1AA==
 ```
 Decodificando com o mesmo processo: `http://10.10.10.5`
 
+![10-cyberchef-base64-decoded-script](screenshots/10-cyberchef-base64-decoded-script.png)
+
 **Etapa 3 — URL completa:**
 O path `/news.php` estava concatenado no script original, resultando na URL completa:
 ```
 http://10.10.10.5/news.php
 ```
+
+![11-cyberchef-base64-url-extracted](screenshots/11-cyberchef-base64-url-extracted.png)
 
 **Etapa 4 — Defang da URL (flag final):**
 Aplicei o operador `Defang URL` no CyberChef para obter o formato seguro exigido pelo desafio:
@@ -283,10 +289,7 @@ Aplicei o operador `Defang URL` no CyberChef para obter o formato seguro exigido
 hxxp[://]10[.]10[.]10[.]5/news[.]php
 ```
 
-📸 `09-powershell-operational-obfuscated-payload.png`
-📸 `10-cyberchef-base64-decoded-script.png`
-📸 `11-cyberchef-base64-url-extracted.png`
-📸 `12-cyberchef-defang-url-final-flag.png`
+![12-cyberchef-defang-url-final-flag](screenshots/12-cyberchef-defang-url-final-flag.png)
 
 ---
 
